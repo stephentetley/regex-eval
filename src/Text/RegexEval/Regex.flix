@@ -67,142 +67,75 @@ namespace Text/RegexEval/Regex {
             Err("lastSubmatch: mo match")
 
 
-/*
-
-    /// Input matches at least once (left to right)...
     ///
-    /// The MatchEvaluator `eval` is potentially impure (e.g. it might create an array),
-    /// so this function is impure.
+    /// Returns the start substring of `s` matched by the pattern `p`.
     ///
-    pub def contains(patt: Pattern, eval: MatchEvaluator[a], input: String): Result[a, String] & Impure =
-        evaluate(Text/Regex/Internal/Prim.find!, notModified, patt, eval, input)
-
-    ///
-    /// Returns the start of `input` matched by the pattern `patt`.
-    ///
-    pub def prefix(patt: Pattern, eval: MatchEvaluator[a], input: String): Result[a, String] & Impure =
-        evaluate(Text/Regex/Internal/Prim.lookingAt, notModified, patt, eval, input)
-
-
-    /// Whole input matches...
-    /// The MatchEvaluator `eval` is potentially impure (e.g. it might create an array),
-    /// so this function is impure.
-    /// Returns `Ok(None)` on no match
-    pub def matchesOptional(patt: Pattern, eval: MatchEvaluator[a], input: String): Result[Option[a], String] & Impure =
-        evaluateOptional(Text/Regex/Internal/Prim.matches, notModified, patt, eval, input)
-
-
-    /// Returns `Ok(None)` on no match
-    pub def containsOptional(patt: Pattern, eval: MatchEvaluator[a], input: String): Result[Option[a], String] & Impure =
-        evaluateOptional(Text/Regex/Internal/Prim.find!, notModified, patt, eval, input)
-
-    /// Returns `Ok(None)` on no match
-    pub def prefixOptional(patt: Pattern, eval: MatchEvaluator[a], input: String): Result[Option[a], String] & Impure =
-        evaluateOptional(Text/Regex/Internal/Prim.lookingAt, notModified, patt, eval, input)
-
-
-
-
-    /// Match input within region, match must start at start of region...
-    pub def noundedMatches(bounds: {start :: Int32, end :: Int32},
-                                patt: Pattern,
-                                eval: MatchEvaluator[a],
-                                input: String): Result[a, String] & Impure =
-        evaluate(Text/Regex/Internal/Prim.matches, setRegion!(bounds), patt, eval, input)
-
-    /// Match input within region, match must start at start of region...
-    pub def boundedContains(bounds: {start :: Int32, end :: Int32},
-                                patt: Pattern,
-                                eval: MatchEvaluator[a],
-                                input: String): Result[a, String] & Impure =
-        evaluate(Text/Regex/Internal/Prim.find!, setRegion!(bounds), patt, eval, input)
-
-    /// Match input within region, match must start at start of region...
-    pub def boundedPrefix(bounds: {start :: Int32, end :: Int32},
-                                    patt: Pattern,
-                                    eval: MatchEvaluator[a],
-                                    input: String): Result[a, String] & Impure =
-        evaluate(Text/Regex/Internal/Prim.lookingAt, setRegion!(bounds), patt, eval, input)
-
-
-    /// Returns `Ok(None)` on no match
-    pub def boundedMatchesOptional(bounds: {start :: Int32, end :: Int32},
-                                        patt: Pattern,
-                                        eval: MatchEvaluator[a],
-                                        input: String): Result[Option[a], String] & Impure =
-        evaluateOptional(Text/Regex/Internal/Prim.matches, setRegion!(bounds), patt, eval, input)
-
-    /// Returns `Ok(None)` on no match
-    pub def boundedContainsOptional(bounds: {start :: Int32, end :: Int32},
-                                        patt: Pattern,
-                                        eval: MatchEvaluator[a],
-                                        input: String): Result[Option[a], String] & Impure =
-        evaluateOptional(Text/Regex/Internal/Prim.find!, setRegion!(bounds), patt, eval, input)
-
-    /// Returns `Ok(None)` on no match
-    pub def boundedPrefixOptional(bounds: {start :: Int32, end :: Int32},
-                                            patt: Pattern,
-                                            eval: MatchEvaluator[a],
-                                            input: String): Result[Option[a], String] & Impure =
-        evaluateOptional(Text/Regex/Internal/Prim.lookingAt, setRegion!(bounds), patt, eval, input)
-
-
-    // # Multiple results
-
-    ///
-    /// TODO: use a "Stream" when stdlib has an implementation finalized
-    ///
-    pub def results(patt: Pattern, eval: MatchEvaluator[a], input: String): Result[List[a], String] & Impure =
-        let Pattern(patt1) = patt;
+    pub def matchPrefix(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher, lookingAt, matchResult};
+        let m = newMatcher(r, p, s);
         let MatchEvaluator(eval1) = eval;
-        let m1 = Text/Regex/Internal/Prim.newMatcher(patt1, input);
-        let iter = _ -> match Text/Regex/Internal/Prim.find!(m1) {
-            case true  => eval1(m1) |> Result.map(Some)
-            case false => Ok(None)
-        };
-        List.unfoldWithOkIter(iter)
+        if (lookingAt(m)) 
+            eval1(m) 
+        else
+            Err("matchPrefix: no match")
+        
 
     ///
-    /// Stream...
     ///
-    pub def contents(patt: Pattern, input: String): Result[List[String], String] & Impure =
-        use Text/RegexEval/MatchEvaluator.{content};
-        results(patt, content(), input)
+    pub def boundedMatchAll(r: Region[r], 
+                            eval: MatchEvaluator[r, a], 
+                            bounds: {start :: Int32, end :: Int32}, 
+                            p: Pattern, 
+                            s: String): Result[a, String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher, setBounds!, matches, matchResult};
+        let m = newMatcher(r, p, s);
+        let MatchEvaluator(eval1) = eval;
+        match setBounds!(bounds, m) {
+            case Err(msg) => Err(msg)
+            case Ok()     =>
+                if (matches(m)) 
+                    eval1(m) 
+                else
+                    Err("boundedMatchAll: no match")
+        }
+
+    pub def boundedFirstSubmatch(r: Region[r], 
+                                    eval: MatchEvaluator[r, a], 
+                                    bounds: {start :: Int32, end :: Int32}, 
+                                    p: Pattern, 
+                                    s: String): Result[a, String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher, setBounds!, find!, matchResult};
+        let m = newMatcher(r, p, s);
+        let MatchEvaluator(eval1) = eval;
+        match setBounds!(bounds, m) {
+            case Err(msg) => Err(msg)
+            case Ok()     =>
+                if (find!(m)) 
+                    eval1(m)
+                else
+                    Err("boundedFirstSubmatch: no match")
+        }
 
     ///
-    /// Stream...
+    /// Returns string `s` with every match of the pattern `from` replaced by the string `to`.
     ///
-    pub def ranges(patt: Pattern, input: String): Result[List[{start :: Int32, end :: Int32}], String] & Impure =
-        use Text/RegexEval/MatchEvaluator.{getRange};
-        results(patt, getRange(), input)
+    pub def replace(r: Region[r], from: {from :: Pattern}, to: {to :: MatchEvaluator[r, String]}, s: String): Result[String, String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher};
+        let m = newMatcher(r, from.from, s);
+        region r1 { 
+            let sb = new StringBuilder(r1);
+            replaceHelper(sb, m, to.to) |> Result.map(_ -> StringBuilder.toString(sb))
+        }
 
 
+    def replaceHelper(sb: StringBuilder[r1], m: Matcher[r], eval: MatchEvaluator[r, String]): Result[Unit, String] \ { Read(r), Write(r1) } =
+        use Text/Regex/Matcher.{find!, appendReplacement!, appendTail!};
+        let MatchEvaluator(eval1) = eval;
+        if (find!(m))
+            eval1(m) |> Result.map(s -> appendReplacement!(s, sb, m))
+        else { 
+            appendTail!(sb, m); 
+            Ok()
+        }
 
-    ///
-    /// Rewrite the string `input` by applying the function `f` to the
-    /// substring produced by each match of the pattern `patt`.
-    ///
-    pub def replace(from: {from :: Pattern}, to: {to :: MatchEvaluator[String]}, input: String): Result[String, String] & Impure =
-        use Text/Regex/Replacer.{execReplacer};
-        use Text/RegexEval/Replacer.{rewriteAll!};
-        execReplacer(rewriteAll!(to.to), from.from, input)
-
-    /// TODO...
-    /// ///
-    /// /// Returns `input` with the first match of the regular expression `patt` replaced by the string `rep`.
-    /// ///
-    /// pub def replaceFirstMatch(from: {from :: Pattern}, to: {to :: String}, input: String): String =
-    ///     let Pattern(patt1) = from.from;
-    ///     let m1 = Text/Regex/Internal/Prim.newMatcher(patt1, input) as & Pure;
-    ///     Text/Regex/Internal/Prim.replaceFirst(m1, to.to) as & Pure
-
-    ///
-    /// Rewrite the string `input` by apply the function `f` to the substring produced by each match of the pattern `patt`.
-    ///
-    pub def rewriteWithIndex(patt: Pattern, eval: Int32 -> MatchEvaluator[String], input: String): Result[String, String] & Impure =
-        use Text/Regex/Replacer.{execReplacer};
-        use Text/RegexEval/Replacer.{rewriteAllWithIndex!};
-        execReplacer(rewriteAllWithIndex!(eval), patt, input)
-
-*/
 }
