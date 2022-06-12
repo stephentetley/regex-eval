@@ -41,6 +41,17 @@ namespace Text/RegexEval/Regex {
         else
             Err("matchAll: mo match")
 
+    /// No match is None rather than Err.
+    pub def matchAllOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher, matches};
+        let m = newMatcher(r, p, s);
+        let MatchEvaluator(eval1) = eval;
+        if (matches(m)) 
+            eval1(m) |> Result.map(Some)
+        else
+            Ok(None)
+
+
     ///
     /// Returns the first result matched by the pattern `p` on the input `s`.
     ///
@@ -52,6 +63,20 @@ namespace Text/RegexEval/Regex {
             eval1(m)
         else
             Err("firstSubmatch: mo match")
+
+    ///
+    /// Returns the first result matched by the pattern `p` on the input `s`.
+    ///
+    /// No match is None rather than Err.
+    ///
+    pub def firstSubmatchOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher, find!, matchResult};
+        let m = newMatcher(r, p, s);
+        let MatchEvaluator(eval1) = eval;
+        if (find!(m)) 
+            eval1(m) |> Result.map(Some)
+        else
+            Ok(None)
 
 
     ///
@@ -68,6 +93,19 @@ namespace Text/RegexEval/Regex {
 
 
     ///
+    /// Returns the last result matched by the pattern `p` on the input `s`.
+    ///
+    pub def lastSubmatchOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher, findLast!, matchResult};
+        let m = newMatcher(r, p, s);
+        let MatchEvaluator(eval1) = eval;
+        if (findLast!(m)) 
+            eval1(m) |> Result.map(Some)
+        else
+            Ok(None)
+
+
+    ///
     /// Returns the start substring of `s` matched by the pattern `p`.
     ///
     pub def matchPrefix(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
@@ -79,6 +117,18 @@ namespace Text/RegexEval/Regex {
         else
             Err("matchPrefix: no match")
         
+
+    ///
+    /// Returns the start substring of `s` matched by the pattern `p`.
+    ///
+    pub def matchPrefixOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+        use Text/Regex/Matcher.{newMatcher, lookingAt, matchResult};
+        let m = newMatcher(r, p, s);
+        let MatchEvaluator(eval1) = eval;
+        if (lookingAt(m)) 
+            eval1(m) |> Result.map(Some)
+        else
+            Ok(None)
 
     ///
     ///
