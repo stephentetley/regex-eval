@@ -44,6 +44,14 @@ namespace Text/RegexEval {
             Text/RegexEval/MatchEvaluator.flatMap(f, o)
     }
 
+    instance MonadZero[MatchEvaluator[r]] {
+        pub def empty(): MatchEvaluator[r, a] = Text/RegexEval/MatchEvaluator.empty()
+    }
+
+    instance MonadLib.MonadOr[MatchEvaluator[r]] {
+        pub def orelse(a: MatchEvaluator[r, a], b: MatchEvaluator[r, a]): MatchEvaluator[r, a] =
+            Text/RegexEval/MatchEvaluator.orelse(a, b)
+    }
 
 }
 
@@ -110,12 +118,12 @@ namespace Text/RegexEval/MatchEvaluator {
     pub def bind(x: MatchEvaluator[r, a], k: a -> MatchEvaluator[r, b] & ef): MatchEvaluator[r, b] & ef =
         flatMap(k, x)
 
-    // MatchEvaluator can be alternative because it does not "step".
+    // MatchEvaluator can be MonadOr because it does not "step".
     // It is only run on the current match.
 
-    pub def mzero(): MatchEvaluator[r, a] = throwError("MatchEvaluator.mzero")
+    pub def empty(): MatchEvaluator[r, a] = throwError("empty")
 
-    pub def alt(ma: MatchEvaluator[r, a], mb: MatchEvaluator[r, a]): MatchEvaluator[r, a] =
+    pub def orelse(ma: MatchEvaluator[r, a], mb: MatchEvaluator[r, a]): MatchEvaluator[r, a] =
         MatchEvaluator(s ->
             match apply1(ma, s) {
                 case Ok(a) => Ok(a)

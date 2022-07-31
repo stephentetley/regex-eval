@@ -9,3 +9,5 @@ License: Apache 2.0
 Dependencies: 
 
 https://github.com/stephentetley/flix-regex
+
+https://github.com/stephentetley/monad-lib
