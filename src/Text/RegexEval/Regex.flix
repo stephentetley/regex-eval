@@ -29,8 +29,6 @@ namespace Text/RegexEval/Regex {
     // # Simple extractors
 
     /// Whole input matches...
-    /// The MatchEvaluator `eval` is potentially impure (e.g. it might create an array),
-    /// so this function is impure.
     ///
     pub def matchAll(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, matches};
