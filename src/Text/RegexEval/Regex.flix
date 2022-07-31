@@ -30,22 +30,20 @@ namespace Text/RegexEval/Regex {
 
     /// Whole input matches...
     ///
-    pub def matchAll(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
+    pub def matchAll(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, matches};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
         if (matches(m)) 
-            eval1(m)
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m)
         else
             Err("matchAll: mo match")
 
     /// No match is None rather than Err.
-    pub def matchAllOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+    pub def matchAllOptional(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, matches};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
         if (matches(m)) 
-            eval1(m) |> Result.map(Some)
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m) |> Result.map(Some)
         else
             Ok(None)
 
@@ -53,12 +51,11 @@ namespace Text/RegexEval/Regex {
     ///
     /// Returns the first result matched by the pattern `p` on the input `s`.
     ///
-    pub def firstSubmatch(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
+    pub def firstSubmatch(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, find!, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
-        if (find!(m)) 
-            eval1(m)
+        if (find!(m))
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m)
         else
             Err("firstSubmatch: mo match")
 
@@ -67,12 +64,11 @@ namespace Text/RegexEval/Regex {
     ///
     /// No match is None rather than Err.
     ///
-    pub def firstSubmatchOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+    pub def firstSubmatchOptional(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, find!, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
-        if (find!(m)) 
-            eval1(m) |> Result.map(Some)
+        if (find!(m))
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m) |> Result.map(Some)
         else
             Ok(None)
 
@@ -80,12 +76,11 @@ namespace Text/RegexEval/Regex {
     ///
     /// Returns the last result matched by the pattern `p` on the input `s`.
     ///
-    pub def lastSubmatch(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
+    pub def lastSubmatch(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, findLast!, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
-        if (findLast!(m)) 
-            eval1(m)
+        if (findLast!(m))
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m)
         else
             Err("lastSubmatch: mo match")
 
@@ -93,12 +88,11 @@ namespace Text/RegexEval/Regex {
     ///
     /// Returns the last result matched by the pattern `p` on the input `s`.
     ///
-    pub def lastSubmatchOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+    pub def lastSubmatchOptional(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, findLast!, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
-        if (findLast!(m)) 
-            eval1(m) |> Result.map(Some)
+        if (findLast!(m))
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m) |> Result.map(Some)
         else
             Ok(None)
 
@@ -106,12 +100,11 @@ namespace Text/RegexEval/Regex {
     ///
     /// Returns the start substring of `s` matched by the pattern `p`.
     ///
-    pub def matchPrefix(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
+    pub def matchPrefix(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, lookingAt, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
         if (lookingAt(m)) 
-            eval1(m) 
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m)
         else
             Err("matchPrefix: no match")
         
@@ -119,47 +112,44 @@ namespace Text/RegexEval/Regex {
     ///
     /// Returns the start substring of `s` matched by the pattern `p`.
     ///
-    pub def matchPrefixOptional(r: Region[r], eval: MatchEvaluator[r, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
+    pub def matchPrefixOptional(r: Region[r], eval: MatchEvaluator[r, a, a], p: Pattern, s: String): Result[Option[a], String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, lookingAt, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
         if (lookingAt(m)) 
-            eval1(m) |> Result.map(Some)
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m) |> Result.map(Some)
         else
             Ok(None)
 
     ///
     ///
     pub def boundedMatchAll(r: Region[r], 
-                            eval: MatchEvaluator[r, a], 
+                            eval: MatchEvaluator[r, a, a], 
                             bounds: {start :: Int32, end :: Int32}, 
                             p: Pattern, 
                             s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, setBounds!, matches, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
         match setBounds!(bounds, m) {
             case Err(msg) => Err(msg)
             case Ok()     =>
                 if (matches(m)) 
-                    eval1(m) 
+                    Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m)
                 else
                     Err("boundedMatchAll: no match")
         }
 
     pub def boundedFirstSubmatch(r: Region[r], 
-                                    eval: MatchEvaluator[r, a], 
+                                    eval: MatchEvaluator[r, a, a], 
                                     bounds: {start :: Int32, end :: Int32}, 
                                     p: Pattern, 
                                     s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, setBounds!, find!, matchResult};
         let m = newMatcher(r, p, s);
-        let MatchEvaluator(eval1) = eval;
         match setBounds!(bounds, m) {
             case Err(msg) => Err(msg)
             case Ok()     =>
                 if (find!(m)) 
-                    eval1(m)
+                    Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m)
                 else
                     Err("boundedFirstSubmatch: no match")
         }
@@ -167,20 +157,19 @@ namespace Text/RegexEval/Regex {
     ///
     /// Returns string `s` with every match of the pattern `from` replaced by the string `to`.
     ///
-    pub def replace(r: Region[r], from: {from :: Pattern}, to: {to :: MatchEvaluator[r, String]}, s: String): Result[String, String] \ Read(r) =
+    pub def replace(r: Region[r], from: {from :: Pattern}, to: {to :: MatchEvaluator[r, String, String]}, s: String): Result[String, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher};
         let m = newMatcher(r, from.from, s);
         region r1 { 
             let sb = new StringBuilder(r1);
-            replaceHelper(sb, m, to.to) |> Result.map(_ -> StringBuilder.toString(sb))
+            replaceHelper(r, sb, m, to.to) |> Result.map(_ -> StringBuilder.toString(sb))
         }
 
 
-    def replaceHelper(sb: StringBuilder[r1], m: Matcher[r], eval: MatchEvaluator[r, String]): Result[Unit, String] \ { Read(r), Write(r1) } =
+    def replaceHelper(r: Region[r], sb: StringBuilder[r1], m: Matcher[r], eval: MatchEvaluator[r, String, String]): Result[Unit, String] \ { Read(r), Write(r1) } =
         use Text/Regex/Matcher.{find!, appendReplacement!, appendTail!};
-        let MatchEvaluator(eval1) = eval;
         if (find!(m))
-            eval1(m) |> Result.map(s -> appendReplacement!(s, sb, m))
+            Text/RegexEval/MatchEvaluator.runMatchEvaluator(r, eval, m) |> Result.map(s -> appendReplacement!(s, sb, m))
         else { 
             appendTail!(sb, m); 
             Ok()

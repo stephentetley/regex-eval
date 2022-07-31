@@ -46,7 +46,7 @@ namespace Test01 {
     
     /// We can abstract the body of an "evaluation" into a separate function provided 
     /// the region and the eval function operate on the same region.
-    def test04Body(r1: Region[r], eval: MatchEvaluator[r, String]): Result[String, String] \ Read(r) =
+    def test04Body(r1: Region[r], eval: MatchEvaluator[r, String, String]): Result[String, String] \ Read(r) =
         use Result.{flatMap}; 
         let* p1 = Text/Regex/Pattern.compile("[\\s\\S]*");
         Text/RegexEval/Regex.matchAll(r1, eval, p1, "Hello world")
