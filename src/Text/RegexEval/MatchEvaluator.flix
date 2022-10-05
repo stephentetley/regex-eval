@@ -21,7 +21,7 @@ namespace Text/RegexEval {
     use Text/Regex.{Matcher};
 
     ///
-    /// Matcher is a monad (handle, error).
+    /// Matcher is a monad (mutable-state, error).
     ///
     pub enum MatchEvaluator[r: Region, ka: Type, a: Type](MonadLib.Evaluator[r, ka, Matcher[r], a])
 
@@ -53,6 +53,17 @@ namespace Text/RegexEval {
             Text/RegexEval/MatchEvaluator.orelse(a, b)
     }
 
+    instance MonadLib.MonadError[MatchEvaluator[r, ka]] { 
+        pub def throwError(msg: String): MatchEvaluator[r, ka, a] =
+            Text/RegexEval/MatchEvaluator.throwError(msg)
+
+        pub def mapError(f: String -> String \ ef, ma: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, a] \ ef = 
+            Text/RegexEval/MatchEvaluator.mapError(f, ma)
+
+        pub def catchError(ma: MatchEvaluator[r, ka, a], hdlr: String -> MatchEvaluator[r, ka, a] \ ef): MatchEvaluator[r, ka, a] \ ef = 
+            Text/RegexEval/MatchEvaluator.catchError(ma, hdlr)
+    }  
+
 }
 
 namespace Text/RegexEval/MatchEvaluator {
@@ -81,13 +92,6 @@ namespace Text/RegexEval/MatchEvaluator {
 
 
 
-    pub def throwError(msg: String): MatchEvaluator[r, ka, a] = 
-        MatchEvaluator(MonadLib/Evaluator.throwError(msg))
-
-    pub def swapError(msg: String, ma: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, a] =
-        MatchEvaluator(MonadLib/Evaluator.swapError(msg, getMatchEvaluator(ma)))
-
-
     pub def map(f: a -> b & ef, x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
         MatchEvaluator(MonadLib/Evaluator.map(f, getMatchEvaluator(x)))
 
@@ -97,11 +101,19 @@ namespace Text/RegexEval/MatchEvaluator {
     
     pub def flatMap(k: a -> MatchEvaluator[r, ka, b] & ef, x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
         MatchEvaluator(MonadLib/Evaluator.flatMap(k >> getMatchEvaluator, getMatchEvaluator(x)))
-    
 
+    pub def throwError(msg: String): MatchEvaluator[r, ka, a] = 
+        MatchEvaluator(MonadLib/Evaluator.throwError(msg))
+  
+
+    pub def mapError(f: String -> String \ ef, ma: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, a] \ ef = 
+        MatchEvaluator(MonadLib/Evaluator.mapError(f, getMatchEvaluator(ma)))
+
+    pub def catchError(ma: MatchEvaluator[r, ka, a], hdlr: String -> MatchEvaluator[r, ka, a] \ ef): MatchEvaluator[r, ka, a] \ ef = 
+        MatchEvaluator(MonadLib/Evaluator.catchError(getMatchEvaluator(ma), hdlr >> getMatchEvaluator))
 
     // MatchEvaluator can be MonadOr because it does not "step".
-    // It is only run on the current match.
+    // It is only runs on the current match.
 
     pub def empty(): MatchEvaluator[r, ka, a] = throwError("empty")
 
@@ -162,12 +174,12 @@ namespace Text/RegexEval/MatchEvaluator {
         liftMatcherApp(Text/Regex/Matcher.end)
 
     pub def getLength(): MatchEvaluator[r, ka, Int32] \ Read(r) =
-        liftA2((x,y) -> y - x, getStart(), getEnd()) |> swapError("getLength")
+        liftA2((x,y) -> y - x, getStart(), getEnd()) |> MonadLib/MonadError.swapError("getLength")
 
     ///
     ///
     pub def getBounds(): MatchEvaluator[r, ka, {start :: Int32, end :: Int32}] \ Read(r) =
-        liftA2((x,y) -> {start = x, end = y}, getStart(), getEnd()) |> swapError("getBounds")
+        liftA2((x,y) -> {start = x, end = y}, getStart(), getEnd()) |> MonadLib/MonadError.swapError("getBounds")
 
 
     ///
