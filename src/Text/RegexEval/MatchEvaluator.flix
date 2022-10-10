@@ -27,7 +27,7 @@ namespace Text/RegexEval {
 
 
     instance Functor[MatchEvaluator[r, ka]] {
-        pub def map(f: a -> b & ef, o: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
+        pub def map(f: a -> b \ ef, o: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] \ ef =
             Text/RegexEval/MatchEvaluator.map(f, o)
     }
 
@@ -35,12 +35,12 @@ namespace Text/RegexEval {
         pub def point(x: a): MatchEvaluator[r, ka, a] = 
             Text/RegexEval/MatchEvaluator.point(x)
 
-        pub def ap(f: MatchEvaluator[r, ka, a -> b & ef], x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
+        pub def ap(f: MatchEvaluator[r, ka, a -> b \ ef], x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] \ ef =
             Text/RegexEval/MatchEvaluator.ap(f, x)
     }
 
     instance Monad[MatchEvaluator[r, ka]] {
-        pub def flatMap(f: a -> MatchEvaluator[r, ka, b] & ef, o: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
+        pub def flatMap(f: a -> MatchEvaluator[r, ka, b] \ ef, o: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] \ ef =
             Text/RegexEval/MatchEvaluator.flatMap(f, o)
     }
 
@@ -84,7 +84,7 @@ namespace Text/RegexEval/MatchEvaluator {
 
     pub def runMatchEvaluator(r: Region[r], 
                                 ma: MatchEvaluator[r, a, a], 
-                                st: Matcher[r]): Result[a, String] & r =
+                                st: Matcher[r]): Result[a, String] \ r =
         MonadLib/Evaluator.runEvaluator(r, getMatchEvaluator(ma), st)
 
 
@@ -92,14 +92,14 @@ namespace Text/RegexEval/MatchEvaluator {
 
 
 
-    pub def map(f: a -> b & ef, x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
+    pub def map(f: a -> b \ ef, x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] \ ef =
         MatchEvaluator(MonadLib/Evaluator.map(f, getMatchEvaluator(x)))
 
-    pub def ap(mf: MatchEvaluator[r, ka, a -> b & ef], ma: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
+    pub def ap(mf: MatchEvaluator[r, ka, a -> b \ ef], ma: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] \ ef =
         MatchEvaluator(MonadLib/Evaluator.ap(getMatchEvaluator(mf), getMatchEvaluator(ma)))
 
     
-    pub def flatMap(k: a -> MatchEvaluator[r, ka, b] & ef, x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] & ef =
+    pub def flatMap(k: a -> MatchEvaluator[r, ka, b] \ ef, x: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, b] \ ef =
         MatchEvaluator(MonadLib/Evaluator.flatMap(k >> getMatchEvaluator, getMatchEvaluator(x)))
 
     pub def throwError(msg: String): MatchEvaluator[r, ka, a] = 
@@ -121,10 +121,10 @@ namespace Text/RegexEval/MatchEvaluator {
         MatchEvaluator(MonadLib/Evaluator.orelse(getMatchEvaluator(ma), getMatchEvaluator(mb)))
 
 
-    def liftGetter(f: Matcher[r] -> a & ef): MatchEvaluator[r, ka, a] & ef =
+    def liftGetter(f: Matcher[r] -> a \ ef): MatchEvaluator[r, ka, a] \ ef =
         MatchEvaluator(MonadLib/Evaluator.liftGetter(f))
 
-    def liftMatcherApp(f: Matcher[r] -> Result[a, String] & ef): MatchEvaluator[r, ka, a] & ef =
+    def liftMatcherApp(f: Matcher[r] -> Result[a, String] \ ef): MatchEvaluator[r, ka, a] \ ef =
         use Monad.{>>=};
         liftGetter(f) >>= ans -> match ans {
             case Ok(a)    => point(a)
@@ -132,39 +132,19 @@ namespace Text/RegexEval/MatchEvaluator {
         }
 
 
-
-    pub def liftOption(err: String, x: Option[a]): MatchEvaluator[r, ka, a] = match x {
-        case Some(x1) => point(x1)
-        case None     => throwError(err)
-    }
-
-
-    pub def liftResult(x: Result[a, String]): MatchEvaluator[r, ka, a] = match x {
-        case Ok(x1)     => point(x1)
-        case Err(err)   => throwError(err)
-    }
-
-
-    /// pub def optional(mx: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, Option[a]] =
-    ///     MatchEvaluator(s -> match apply1(mx, s) {
-    ///         case Ok(a)  => Ok(Some(a))
-    ///         case Err(_) => Ok(None)
-    ///     })
-
-    /// pub def withDefault(d: a, mx: MatchEvaluator[r, ka, a]): MatchEvaluator[r, ka, a] =
-    ///     MatchEvaluator(s -> match apply1(mx, s) {
-    ///         case Ok(a)  => Ok(a)
-    ///         case Err(_) => Ok(d)
-    ///     })
-
-
+    pub def liftAction(f: Unit -> a \ ef): MatchEvaluator[r, ka, a] \ ef =
+        MatchEvaluator(MonadLib/Evaluator.liftAction(f))
+    
+        
+    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): MatchEvaluator[r, ka, a] \ ef with ToString[err] =
+        MatchEvaluator(MonadLib/Evaluator.liftActionResult(f))
 
     pub def content(): MatchEvaluator[r, ka, String] \ Read(r) =         
         liftMatcherApp(Text/Regex/Matcher.content)
 
 
     /// TODO - is this worthwhile?
-    pub def transformContent(f: String -> a & ef): MatchEvaluator[r, ka, a] \ {ef, Read(r)} = map(f, content())
+    pub def transformContent(f: String -> a \ ef): MatchEvaluator[r, ka, a] \ {ef, Read(r)} = map(f, content())
 
 
     pub def getStart(): MatchEvaluator[r, ka, Int32] \ Read(r) = 
@@ -233,58 +213,58 @@ namespace Text/RegexEval/MatchEvaluator {
 
     pub def getInt8At(ix: Int32): MatchEvaluator[r, ka, Int8] \ Read(r) =
         let* str = getCaptureAt(ix);
-        liftOption("getInt8At(${ix})", FromString.fromString(str): Option[Int8])
+        MonadLib/MonadError.liftOption("getInt8At(${ix})", FromString.fromString(str): Option[Int8])
 
     pub def getInt8Named(label: String): MatchEvaluator[r, ka, Int8] \ Read(r) =
         let* str = getCaptureNamed(label);
-        liftOption("getInt8Named('${label}')", FromString.fromString(str): Option[Int8])
+        MonadLib/MonadError.liftOption("getInt8Named('${label}')", FromString.fromString(str): Option[Int8])
 
     pub def getInt16At(ix: Int32): MatchEvaluator[r, ka, Int16] \ Read(r) =
         let* str = getCaptureAt(ix);
-        liftOption("getInt16At(${ix})", FromString.fromString(str): Option[Int16])
+        MonadLib/MonadError.liftOption("getInt16At(${ix})", FromString.fromString(str): Option[Int16])
 
     pub def getInt16Named(label: String): MatchEvaluator[r, ka, Int16] \ Read(r) =
         let* str = getCaptureNamed(label);
-        liftOption("getInt16Named('${label}')", FromString.fromString(str): Option[Int16])
+        MonadLib/MonadError.liftOption("getInt16Named('${label}')", FromString.fromString(str): Option[Int16])
 
     pub def getInt32At(ix: Int32): MatchEvaluator[r, ka, Int32] \ Read(r) =
         let* str = getCaptureAt(ix);
-        liftOption("getInt32At(${ix})", FromString.fromString(str): Option[Int32])
+        MonadLib/MonadError.liftOption("getInt32At(${ix})", FromString.fromString(str): Option[Int32])
 
     pub def getInt32Named(label: String): MatchEvaluator[r, ka, Int32] \ Read(r) =
         let* str = getCaptureNamed(label);
-        liftOption("getInt32Named('${label}')", FromString.fromString(str): Option[Int32])
+        MonadLib/MonadError.liftOption("getInt32Named('${label}')", FromString.fromString(str): Option[Int32])
 
     pub def getInt64At(ix: Int32): MatchEvaluator[r, ka, Int64] \ Read(r) =
         let* str = getCaptureAt(ix);
-        liftOption("getInt64At(${ix})", FromString.fromString(str): Option[Int64])
+        MonadLib/MonadError.liftOption("getInt64At(${ix})", FromString.fromString(str): Option[Int64])
 
     pub def getInt64Named(label: String): MatchEvaluator[r, ka, Int64] \ Read(r) =
         let* str = getCaptureNamed(label);
-        liftOption("getInt64Named('${label}')", FromString.fromString(str): Option[Int64])
+        MonadLib/MonadError.liftOption("getInt64Named('${label}')", FromString.fromString(str): Option[Int64])
 
     pub def getBigIntAt(ix: Int32): MatchEvaluator[r, ka, BigInt] \ Read(r) =
         let* str = getCaptureAt(ix);
-        liftOption("getBigIntAt(${ix})", FromString.fromString(str): Option[BigInt])
+        MonadLib/MonadError.liftOption("getBigIntAt(${ix})", FromString.fromString(str): Option[BigInt])
 
     pub def getBigIntNamed(label: String): MatchEvaluator[r, ka, BigInt] \ Read(r) =
         let* str = getCaptureNamed(label);
-        liftOption("getBigIntNamed('${label}')", FromString.fromString(str): Option[BigInt])
+        MonadLib/MonadError.liftOption("getBigIntNamed('${label}')", FromString.fromString(str): Option[BigInt])
 
     pub def getFloat32At(ix: Int32): MatchEvaluator[r, ka, Float32] \ Read(r) =
         let* str = getCaptureAt(ix);
-        liftOption("getFloat32At(${ix})", FromString.fromString(str): Option[Float32])
+        MonadLib/MonadError.liftOption("getFloat32At(${ix})", FromString.fromString(str): Option[Float32])
 
     pub def getFloat32Named(label: String): MatchEvaluator[r, ka, Float32] \ Read(r) =
         let* str = getCaptureNamed(label);
-        liftOption("getFloat32Named('${label}')", FromString.fromString(str): Option[Float32])
+        MonadLib/MonadError.liftOption("getFloat32Named('${label}')", FromString.fromString(str): Option[Float32])
 
     pub def getFloat64At(ix: Int32): MatchEvaluator[r, ka, Float64] \ Read(r) =
         let* str = getCaptureAt(ix);
-        liftOption("getFloat64At(${ix})", FromString.fromString(str): Option[Float64])
+        MonadLib/MonadError.liftOption("getFloat64At(${ix})", FromString.fromString(str): Option[Float64])
 
     pub def getFloat64Named(label: String): MatchEvaluator[r, ka, Float64] \ Read(r) =
         let* str = getCaptureNamed(label);
-        liftOption("getFloat64Named('${label}')", FromString.fromString(str): Option[Float64])
+        MonadLib/MonadError.liftOption("getFloat64Named('${label}')", FromString.fromString(str): Option[Float64])
 
 }
