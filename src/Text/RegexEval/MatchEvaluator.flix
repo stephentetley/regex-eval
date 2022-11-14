@@ -158,7 +158,7 @@ namespace Text/RegexEval/MatchEvaluator {
 
     ///
     ///
-    pub def getBounds(): MatchEvaluator[r, ka, {start :: Int32, end :: Int32}] \ Read(r) =
+    pub def getBounds(): MatchEvaluator[r, ka, {start = Int32, end = Int32}] \ Read(r) =
         liftA2((x,y) -> {start = x, end = y}, getStart(), getEnd()) |> MonadLib/MonadError.swapError("getBounds")
 
 

@@ -124,12 +124,13 @@ namespace Text/RegexEval/Regex {
     ///
     pub def boundedMatchAll(r: Region[r], 
                             eval: MatchEvaluator[r, a, a], 
-                            bounds: {start :: Int32, end :: Int32}, 
+                            start: {start = Int32}, 
+                            end: {end = Int32}, 
                             p: Pattern, 
                             s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, setBounds!, matches, matchResult};
         let m = newMatcher(r, p, s);
-        match setBounds!(bounds, m) {
+        match setBounds!(start, end, m) {
             case Err(msg) => Err(msg)
             case Ok()     =>
                 if (matches(m)) 
@@ -140,12 +141,13 @@ namespace Text/RegexEval/Regex {
 
     pub def boundedFirstSubmatch(r: Region[r], 
                                     eval: MatchEvaluator[r, a, a], 
-                                    bounds: {start :: Int32, end :: Int32}, 
+                                    start: {start = Int32}, 
+                                    end: {end = Int32}, 
                                     p: Pattern, 
                                     s: String): Result[a, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher, setBounds!, find!, matchResult};
         let m = newMatcher(r, p, s);
-        match setBounds!(bounds, m) {
+        match setBounds!(start, end, m) {
             case Err(msg) => Err(msg)
             case Ok()     =>
                 if (find!(m)) 
@@ -157,9 +159,9 @@ namespace Text/RegexEval/Regex {
     ///
     /// Returns string `s` with every match of the pattern `from` replaced by the string `to`.
     ///
-    pub def replace(r: Region[r], from: {from :: Pattern}, to: {to :: MatchEvaluator[r, String, String]}, s: String): Result[String, String] \ Read(r) =
+    pub def replace(r: Region[r], patt: {patt = Pattern}, to: {to = MatchEvaluator[r, String, String]}, s: String): Result[String, String] \ Read(r) =
         use Text/Regex/Matcher.{newMatcher};
-        let m = newMatcher(r, from.from, s);
+        let m = newMatcher(r, patt.patt, s);
         region r1 { 
             let sb = new StringBuilder(r1);
             replaceHelper(r, sb, m, to.to) |> Result.map(_ -> StringBuilder.toString(sb))
